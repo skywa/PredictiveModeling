@@ -78,8 +78,6 @@ testing &lt;- read.csv(&quot;pml-testing.csv&quot;, header=T, na.strings=c(&quot
 test &lt;- testing[, !apply(training, 2, function(x) any(is.na(x)))]
 train &lt;- train[,-c(1:7)]
 test &lt;- test[,-c(1:7)]
-# train &lt;- train[,c(8:11,21:42,49:51,61:73,83:93)]
-# test &lt;- test[,c(8:11,21:42,49:51,61:73,83:93)]
 newtrain &lt;- cbind(data.frame(sapply(train[,-53], as.numeric), train[,53]))
 newtest &lt;- cbind(data.frame(sapply(test[,-53], as.numeric), test[,53]))
 colnames(newtrain)[53] &lt;- &quot;classe&quot;;  colnames(newtest)[53] &lt;- &quot;predict_id&quot;</code></pre>
