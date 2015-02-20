@@ -1,0 +1,74 @@
+---
+title: "Predictive Modeling of Correct Barbell Lifts"
+author: "skywa"
+date: "Friday, February 20, 2015"
+output: html_document
+---
+
+Various wearable devices collect information about personal physical activity. These often quantify how much activity is done, but do not predict how well they do it. This study uses a prediction algorithm to use the accelerometers on the belt, forearm, arm, and dumbell of 6 participants to predict if they performed barbell lifts correctly or incorrectly in 5 different ways.
+
+First, let's install two libraries: randomForest and caret
+```{r}
+# install.packages("randomForest")
+# install.packages("caret")
+library(randomForest); library(caret)
+```
+
+Import the data
+```{r, cache=TRUE}
+training <- read.csv("pml-training.csv", header=T, na.strings=c(""," ",NA))
+testing <- read.csv("pml-testing.csv", header=T, na.strings=c(""," ",NA))
+# str(training)
+```
+
+There are quite a few columns that are almost all NAs. These are removed for both the training and the test set. All but the 'classe' variable are converted to a numeric class.
+```{r}
+train <- training[, !apply(training, 2, function(x) any(is.na(x)))]
+test <- testing[, !apply(training, 2, function(x) any(is.na(x)))]
+train <- train[,-c(1:7)]
+test <- test[,-c(1:7)]
+newtrain <- cbind(data.frame(sapply(train[,-53], as.numeric), train[,53]))
+newtest <- cbind(data.frame(sapply(test[,-53], as.numeric), test[,53]))
+colnames(newtrain)[53] <- "classe";  colnames(newtest)[53] <- "predict_id"
+```
+
+To complete some cross-validation, the training set is split into training and testing components (intrain and intest).
+```{r}
+set.seed(941)
+indexTrain <- createDataPartition(y=train$classe, p=0.6, list=FALSE)
+intrain <- newtrain[indexTrain,]
+intest <- newtrain[-indexTrain,]
+```
+
+Using randomForest, a model is created to predict 'classe' using the intrain data.
+```{r, cache=T}
+set.seed(25703)
+rf <- randomForest(formula = classe ~ ., data=intrain, ntree=500)
+rf
+```
+
+Testing the model on the 'intest' data, we get high (>99%) accuracy, shown on the confusion matrix.
+```{r}
+pred <- predict(rf, intest)
+cf <- confusionMatrix(pred, intest$classe)
+cf
+```
+
+The random forest model is used on the original test data set to predict the A, B, C, D, and E for the barbell lifts.
+```{r}
+FinalPred <- predict(rf, newdata=newtest)
+FinalPred
+```
+
+Files were created to submit as answers.
+```{r}
+pml_write_files = function(x){
+  n = length(x)
+  for(i in 1:n){
+    filename = paste0("problem_id_",i,".txt")
+    write.table(x[i], file=filename, quote=FALSE, row.names=FALSE, col.names=FALSE)}}
+
+pml_write_files(FinalPred)
+```
+
+All the predictions were correct!
